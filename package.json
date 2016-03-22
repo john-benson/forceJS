@@ -1,27 +1,16 @@
 {
   "name": "forcejs",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "description": "Salesforce REST SDK",
-  "main": "lib/force.js",
-  "scripts": {
-    "build-lib": "babel force.js -o lib/force.js",
-    "build-app": "browserify app.js -t babelify -o bundle.js",
-    "prepublish": "npm run build-lib",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ccoenraets/forcejs.git"
+    "url": "git+https://github.com/john-benson/forcejs.git"
   },
-  "author": "Christophe Coenraets <ccoenraets@gmail.com> (http://coenraets.org/)",
+  "author": "John Benson <john.benson@bluespurs.com>",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/ccoenraets/forcejs/issues"
-  },
-  "homepage": "https://github.com/ccoenraets/forcejs#readme",
+  "homepage": "https://github.com/john-benson/forcejs#readme",
   "devDependencies": {
-    "babel": "^5.8.23",
-    "babelify": "^6.3.0",
-    "browserify": "^11.2.0"
+    "babel": "5.8.23"
   }
 }

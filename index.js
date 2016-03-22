@@ -1,13 +1,10 @@
 /**
  * ForceJS - REST toolkit for Salesforce.com
  * Author: Christophe Coenraets @ccoenraets
- * Version: 0.7.2
+ * Version: 0.8.0
  */
 "use strict";
 
-Object.defineProperty(exports, '__esModule', {
-    value: true
-});
 var // The login URL for the OAuth process
 // To override default, pass loginURL in init(props)
 loginURL = 'https://login.salesforce.com',
@@ -15,7 +12,7 @@ loginURL = 'https://login.salesforce.com',
 // The Connected App client Id. Default app id provided - Not for production use.
 // This application supports http://localhost:8200/oauthcallback.html as a valid callback URL
 // To override default, pass appId in init(props)
-appId = '3MVG9fMtCkV6eLheIEZplMqWfnGlf3Y.BcWdOf1qytXo9zxgbsrUbS.ExHTgUPJeb3jZeT8NYhc.hMyznKU92',
+appId = '',
 
 // The force.com API version to use.
 // To override default, pass apiVersion in init(props)
@@ -178,7 +175,7 @@ var joinPaths = function joinPaths(path1, path2) {
  *  instanceURL (optional)
  *  refreshToken (optional)
  */
-var init = function init(params) {
+export function init(params) {
 
     if (params) {
         appId = params.appId || appId;
@@ -207,90 +204,54 @@ var init = function init(params) {
     console.log("useProxy: " + useProxy);
 };
 
-exports.init = init;
 /**
  * Discard the OAuth access_token. Use this function to test the refresh token workflow.
  */
-var discardToken = function discardToken() {
+export function discardToken() {
     delete oauth.access_token;
     tokenStore.forceOAuth = JSON.stringify(oauth);
 };
 
-exports.discardToken = discardToken;
 /**
  * Login to Salesforce using OAuth. If running in a Browser, the OAuth workflow happens in a a popup window.
  * If running in Cordova container, it happens using the Mobile SDK 2.3+ Oauth Plugin
  */
-var login = function login() {
-    if (window.cordova) {
-        return loginWithPlugin();
-    } else {
-        return loginWithBrowser();
-    }
+
+ var loginWithBrowser = function loginWithBrowser() {
+     return new Promise(function (resolve, reject) {
+
+         var loginWindowURL = loginURL + '/services/oauth2/authorize?client_id=' + appId + '&redirect_uri=' + oauthCallbackURL + '&response_type=token';
+
+         document.addEventListener("oauthCallback", function (event) {
+
+             // Parse the OAuth data received from Salesforce
+             var url = event.detail,
+                 queryString = undefined,
+                 obj = undefined;
+
+             if (url.indexOf("access_token=") > 0) {
+                 queryString = url.substr(url.indexOf('#') + 1);
+                 obj = parseQueryString(queryString);
+                 oauth = obj;
+                 tokenStore.forceOAuth = JSON.stringify(oauth);
+                 resolve();
+             } else if (url.indexOf("error=") > 0) {
+                 queryString = decodeURIComponent(url.substring(url.indexOf('?') + 1));
+                 obj = parseQueryString(queryString);
+                 reject(obj);
+             } else {
+                 reject({ status: 'access_denied' });
+             }
+         });
+
+         window.open(loginWindowURL, '_blank', 'location=no');
+     });
+ };
+
+export function login() {
+  return loginWithBrowser();
 };
 
-exports.login = login;
-var loginWithPlugin = function loginWithPlugin() {
-    return new Promise(function (resolve, reject) {
-        document.addEventListener("deviceready", function () {
-            oauthPlugin = cordova.require("com.salesforce.plugin.oauth");
-            if (!oauthPlugin) {
-                console.error('Salesforce Mobile SDK OAuth plugin not available');
-                reject('Salesforce Mobile SDK OAuth plugin not available');
-                return;
-            }
-            oauthPlugin.getAuthCredentials(function (creds) {
-                // Initialize ForceJS
-                init({
-                    accessToken: creds.accessToken,
-                    instanceURL: creds.instanceUrl,
-                    refreshToken: creds.refreshToken
-                });
-                resolve();
-            }, function (error) {
-                console.log(error);
-                reject(error);
-            });
-        }, false);
-    });
-};
-
-exports.loginWithPlugin = loginWithPlugin;
-var loginWithBrowser = function loginWithBrowser() {
-    return new Promise(function (resolve, reject) {
-
-        console.log('loginURL: ' + loginURL);
-        console.log('oauthCallbackURL: ' + oauthCallbackURL);
-
-        var loginWindowURL = loginURL + '/services/oauth2/authorize?client_id=' + appId + '&redirect_uri=' + oauthCallbackURL + '&response_type=token';
-
-        document.addEventListener("oauthCallback", function (event) {
-
-            // Parse the OAuth data received from Salesforce
-            var url = event.detail,
-                queryString = undefined,
-                obj = undefined;
-
-            if (url.indexOf("access_token=") > 0) {
-                queryString = url.substr(url.indexOf('#') + 1);
-                obj = parseQueryString(queryString);
-                oauth = obj;
-                tokenStore.forceOAuth = JSON.stringify(oauth);
-                resolve();
-            } else if (url.indexOf("error=") > 0) {
-                queryString = decodeURIComponent(url.substring(url.indexOf('?') + 1));
-                obj = parseQueryString(queryString);
-                reject(obj);
-            } else {
-                reject({ status: 'access_denied' });
-            }
-        });
-
-        window.open(loginWindowURL, '_blank', 'location=no');
-    });
-};
-
-exports.loginWithBrowser = loginWithBrowser;
 /**
  * Gets the user's ID (if logged in)
  * @returns {string} | undefined
@@ -299,7 +260,7 @@ var getUserId = function getUserId() {
     return typeof oauth !== 'undefined' ? oauth.id.split('/').pop() : undefined;
 };
 
-exports.getUserId = getUserId;
+export getUserId;
 /**
  * Get the OAuth data returned by the Salesforce login process
  */
@@ -307,7 +268,7 @@ var getOAuthResult = function getOAuthResult() {
     return oauth;
 };
 
-exports.getOAuthResult = getOAuthResult;
+export getOAuthResult;
 /**
  * Check the login status
  * @returns {boolean}
@@ -316,7 +277,7 @@ var isAuthenticated = function isAuthenticated() {
     return oauth && oauth.access_token ? true : false;
 };
 
-exports.isAuthenticated = isAuthenticated;
+export isAuthenticated;
 /**
  * Lets you make any Salesforce REST API request.
  * @param obj - Request configuration object. Can include:
@@ -388,7 +349,7 @@ var request = function request(obj) {
     });
 };
 
-exports.request = request;
+export request;
 /**
  * Convenience function to execute a SOQL query
  * @param soql
@@ -400,7 +361,7 @@ var query = function query(soql) {
     });
 };
 
-exports.query = query;
+export query;
 /**
  * Convenience function to retrieve a single record based on its Id
  * @param objectName
@@ -414,7 +375,7 @@ var retrieve = function retrieve(objectName, id, fields) {
     });
 };
 
-exports.retrieve = retrieve;
+export retrieve;
 /**
  * Convenience function to retrieve picklist values from a SalesForce Field
  * @param objectName
@@ -425,7 +386,7 @@ var getPickListValues = function getPickListValues(objectName) {
     });
 };
 
-exports.getPickListValues = getPickListValues;
+export getPickListValues;
 /**
  * Convenience function to create a new record
  * @param objectName
@@ -440,7 +401,7 @@ var create = function create(objectName, data) {
     });
 };
 
-exports.create = create;
+export create;
 /**
  * Convenience function to update a record. You can either pass the sobject returned by retrieve or query or a simple JavaScript object.
  * @param objectName
@@ -464,7 +425,7 @@ var update = function update(objectName, data) {
     });
 };
 
-exports.update = update;
+export update;
 /**
  * Convenience function to delete a record
  * @param objectName
@@ -477,7 +438,7 @@ var del = function del(objectName, id) {
     });
 };
 
-exports.del = del;
+export del;
 /**
  * Convenience function to upsert a record
  * @param objectName
@@ -494,7 +455,7 @@ var upsert = function upsert(objectName, externalIdField, externalId, data) {
     });
 };
 
-exports.upsert = upsert;
+export upsert;
 /**
  * Convenience function to invoke APEX REST endpoints
  * @param pathOrParams
@@ -519,8 +480,8 @@ var apexrest = function apexrest(pathOrParams) {
 
     return request(params);
 };
+export apexrest;
 
-exports.apexrest = apexrest;
 /**
  * Convenience function to invoke the Chatter API
  * @param pathOrParams
@@ -543,4 +504,5 @@ var chatter = function chatter(pathOrParams) {
 
     return request(params);
 };
-exports.chatter = chatter;
+
+export chatter;
