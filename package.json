@@ -1,8 +1,11 @@
 {
   "name": "forcejs",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Salesforce REST SDK",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "scripts": {
+    "package": "babel force.js -o lib/index.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/john-benson/forcejs.git"
