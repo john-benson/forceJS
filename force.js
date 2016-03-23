@@ -224,9 +224,6 @@ export let discardToken = () => {
 
 let loginWithBrowser = () => new Promise((resolve, reject) => {
 
-   console.log('loginURL: ' + loginURL);
-   console.log('oauthCallbackURL: ' + oauthCallbackURL);
-
    let loginWindowURL = loginURL + '/services/oauth2/authorize?client_id=' + appId + '&redirect_uri=' + oauthCallbackURL + '&response_type=token';
 
    const loginPopup = window.open(loginWindowURL, '_blank', 'location=no');
@@ -252,8 +249,18 @@ let loginWithBrowser = () => new Promise((resolve, reject) => {
      loginPopup.close();
    };
 
+   const loginPopupCompleted = (reason) => {
+     clearInterval(loginPopupInterval);
+   };
+
    const loginPopupInterval = setInterval((event) => {
      try {
+       if(!loginPopup || loginPopup.closed) {
+         loginPopupCompleted();
+         reject({status: 'user_terminated'});
+         return;
+       }
+
        const url = loginPopup.location.href;
 
        if(url.startsWith(oauthCallbackURL)) {
@@ -265,8 +272,9 @@ let loginWithBrowser = () => new Promise((resolve, reject) => {
      }
    }, 50);
 
-   loginPopup.onbeforeunload = () => {  clearInterval(loginPopupInterval); }
-
+   loginPopup.onbeforeunload = () => {
+     clearInterval(loginPopupInterval);
+   };
 });
 
 

@@ -1,10 +1,11 @@
 {
   "name": "forcejs",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Salesforce REST SDK",
   "main": "lib/index.js",
   "scripts": {
-    "package": "babel force.js -o lib/index.js"
+    "package": "babel force.js -o lib/index.js",
+    "package:watch": "babel force.js --watch -o lib/index.js"
   },
   "repository": {
     "type": "git",
