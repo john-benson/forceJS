@@ -93,24 +93,6 @@ let toQueryString = obj => {
     return parts.join("&");
 };
 
-let refreshTokenWithPlugin = () => {
-
-    return new Promise((resolve, reject) => {
-        oauthPlugin.authenticate(
-            function (response) {
-                oauth.access_token = response.accessToken;
-                tokenStore.forceOAuth = JSON.stringify(oauth);
-                resolve();
-            },
-            function () {
-                console.error('Error refreshing oauth access token using the oauth plugin');
-                reject();
-            }
-        );
-    });
-
-};
-
 let refreshTokenWithHTTPRequest = () => new Promise((resolve, reject) => {
 
     if (!oauth.refresh_token) {
@@ -155,11 +137,7 @@ let refreshTokenWithHTTPRequest = () => new Promise((resolve, reject) => {
 });
 
 let refreshToken = () => {
-    if (oauthPlugin) {
-        return refreshTokenWithPlugin(oauthPlugin);
-    } else {
-        return refreshTokenWithHTTPRequest();
-    }
+  return refreshTokenWithHTTPRequest();
 };
 
 let joinPaths = (path1, path2) => {
@@ -167,6 +145,11 @@ let joinPaths = (path1, path2) => {
     if (path2.charAt(0) === '/') path2 = path2.substr(1);
     return path1 + path2;
 }
+
+export const logout = () => {
+  tokenStore = {};
+  oauth = {};
+};
 
 /**
  * Initialize ForceJS
@@ -226,7 +209,14 @@ let loginWithBrowser = () => new Promise((resolve, reject) => {
 
    let loginWindowURL = loginURL + '/services/oauth2/authorize?client_id=' + appId + '&redirect_uri=' + oauthCallbackURL + '&response_type=token';
 
+   let loginFinshed = false;
+
    const loginPopup = window.open(loginWindowURL, '_blank', 'location=no');
+
+   const loginPopupCompleted = () => {
+     loginFinshed = true;
+     clearInterval(loginPopupInterval);
+   };
 
    const handleOauthResponse = (url) => {
      let queryString,
@@ -249,13 +239,9 @@ let loginWithBrowser = () => new Promise((resolve, reject) => {
      loginPopup.close();
    };
 
-   const loginPopupCompleted = (reason) => {
-     clearInterval(loginPopupInterval);
-   };
-
    const loginPopupInterval = setInterval((event) => {
      try {
-       if(!loginPopup || loginPopup.closed) {
+       if((!loginPopup || loginPopup.closed) && !loginFinshed) {
          loginPopupCompleted();
          reject({status: 'user_terminated'});
          return;
@@ -265,7 +251,7 @@ let loginWithBrowser = () => new Promise((resolve, reject) => {
 
        if(url.startsWith(oauthCallbackURL)) {
          handleOauthResponse(url);
-         clearInterval(loginPopupInterval);
+         loginPopupCompleted();
        }
      } catch (e) {
        // C O N S U M E
